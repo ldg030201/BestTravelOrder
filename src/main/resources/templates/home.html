@@ -22,18 +22,28 @@
             padding: 10px;
             box-sizing: border-box;
             background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #search-controls {
+            display: flex;
+            margin-bottom: 10px;
         }
 
         #location-search {
-            width: calc(100% - 10px);
+            flex: 1;
             padding: 5px;
-            margin-bottom: 10px;
         }
 
         #location-list {
             list-style: none;
             padding: 0;
             margin: 0;
+            flex: 1;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            margin-top: 10px;
         }
 
         #location-list li {
@@ -42,9 +52,7 @@
         }
 
         button {
-            width: 100%;
             padding: 10px;
-            margin-top: 10px;
             cursor: pointer;
             background-color: #007bff;
             color: white;
@@ -55,19 +63,36 @@
         button:hover {
             background-color: #0056b3;
         }
+
+        .action-buttons {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            margin-left: 5px;
+        }
+
+        .action-buttons button:first-child {
+            margin-left: 0;
+        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-<div id="map"></div>
 <div id="controls">
-    <input type="text" id="location-search" placeholder="장소 검색">
-    <button id="save-location">저장</button>
-    <ul id="location-list"></ul>
+    <div id="search-controls">
+        <input type="text" id="location-search" placeholder="장소 검색">
+        <button id="search-location">검색</button>
+        <button id="save-location">저장</button>
+    </div>
     <button id="sort-locations">정리</button>
+    <ul id="location-list"></ul>
 </div>
+<div id="map"></div>
 <script>
     let map = L.map('map').setView([37.5665, 126.9780], 13);
 
@@ -77,7 +102,7 @@
 
     let locations = [];
 
-    $('#save-location').on('click', function() {
+    $('#search-location').on('click', function() {
         let searchValue = $('#location-search').val();
         if (searchValue) {
             $.getJSON(`https://nominatim.openstreetmap.org/search?format=json&q=${searchValue}`, function(data) {
@@ -85,16 +110,26 @@
                     let location = data[0];
                     let latlng = [location.lat, location.lon];
                     L.marker(latlng).addTo(map).bindPopup(location.display_name).openPopup();
-                    locations.push({ name: location.display_name, latlng: latlng });
-                    updateLocationList();
+                    $('#location-search').data('currentLocation', { name: location.display_name, latlng: latlng });
                 }
             });
         }
     });
 
+    $('#save-location').on('click', function() {
+        let currentLocation = $('#location-search').data('currentLocation');
+        if (currentLocation) {
+            locations.push(currentLocation);
+            updateLocationList();
+            $('#location-search').val('');
+            $('#location-search').removeData('currentLocation');
+        }
+    });
+
     $('#sort-locations').on('click', function() {
         if (locations.length > 1) {
-            locations.sort((a, b) => getDistance(map.getCenter(), a.latlng) - getDistance(map.getCenter(), b.latlng));
+            let mapCenter = map.getCenter();
+            locations.sort((a, b) => getDistance(mapCenter, a.latlng) - getDistance(mapCenter, b.latlng));
             updateLocationList();
         }
     });
