@@ -101,15 +101,20 @@
     }).addTo(map);
 
     let locations = [];
+    let currentMarker = null;
 
     $('#search-location').on('click', function() {
         let searchValue = $('#location-search').val();
         if (searchValue) {
-            $.getJSON(`https://nominatim.openstreetmap.org/search?format=json&q=${searchValue}`, function(data) {
+            $.getJSON(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=KR&q=${searchValue}`, function(data) {
                 if (data.length > 0) {
                     let location = data[0];
                     let latlng = [location.lat, location.lon];
-                    L.marker(latlng).addTo(map).bindPopup(location.display_name).openPopup();
+                    if (currentMarker) {
+                        map.removeLayer(currentMarker);
+                    }
+                    currentMarker = L.marker(latlng).addTo(map).bindPopup(location.display_name).openPopup();
+                    map.setView(latlng, 13);
                     $('#location-search').data('currentLocation', { name: location.display_name, latlng: latlng });
                 }
             });
@@ -120,9 +125,14 @@
         let currentLocation = $('#location-search').data('currentLocation');
         if (currentLocation) {
             locations.push(currentLocation);
+            L.marker(currentLocation.latlng).addTo(map).bindPopup(currentLocation.name).openPopup();
             updateLocationList();
             $('#location-search').val('');
             $('#location-search').removeData('currentLocation');
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+                currentMarker = null;
+            }
         }
     });
 
