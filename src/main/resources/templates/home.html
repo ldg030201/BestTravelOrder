@@ -1,13 +1,128 @@
-<!doctype html>
-<html lang="ko">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지도와 장소 리스트 웹사이트</title>
+    <style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+        }
+
+        #map {
+            width: 70%;
+            height: 100vh;
+        }
+
+        #controls {
+            width: 30%;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: #f8f9fa;
+        }
+
+        #location-search {
+            width: calc(100% - 10px);
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        #location-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #location-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    home
+<div id="map"></div>
+<div id="controls">
+    <input type="text" id="location-search" placeholder="장소 검색">
+    <button id="save-location">저장</button>
+    <ul id="location-list"></ul>
+    <button id="sort-locations">정리</button>
+</div>
+<script>
+    let map = L.map('map').setView([37.5665, 126.9780], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let locations = [];
+
+    $('#save-location').on('click', function() {
+        let searchValue = $('#location-search').val();
+        if (searchValue) {
+            $.getJSON(`https://nominatim.openstreetmap.org/search?format=json&q=${searchValue}`, function(data) {
+                if (data.length > 0) {
+                    let location = data[0];
+                    let latlng = [location.lat, location.lon];
+                    L.marker(latlng).addTo(map).bindPopup(location.display_name).openPopup();
+                    locations.push({ name: location.display_name, latlng: latlng });
+                    updateLocationList();
+                }
+            });
+        }
+    });
+
+    $('#sort-locations').on('click', function() {
+        if (locations.length > 1) {
+            locations.sort((a, b) => getDistance(map.getCenter(), a.latlng) - getDistance(map.getCenter(), b.latlng));
+            updateLocationList();
+        }
+    });
+
+    function updateLocationList() {
+        let list = $('#location-list');
+        list.empty();
+        locations.forEach(location => {
+            let li = $('<li></li>').text(location.name);
+            list.append(li);
+        });
+    }
+
+    function getDistance(latlng1, latlng2) {
+        let lat1 = parseFloat(latlng1.lat || latlng1[0]);
+        let lon1 = parseFloat(latlng1.lng || latlng1[1]);
+        let lat2 = parseFloat(latlng2[0]);
+        let lon2 = parseFloat(latlng2[1]);
+
+        let R = 6371; // km
+        let dLat = (lat2 - lat1) * Math.PI / 180;
+        let dLon = (lon2 - lon1) * Math.PI / 180;
+        let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+</script>
 </body>
 </html>
