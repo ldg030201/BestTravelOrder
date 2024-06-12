@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>지도와 장소 리스트 웹사이트</title>
+    <title>여행 경로 최적화</title>
     <style>
         body {
             display: flex;
@@ -64,11 +64,6 @@
             background-color: #0056b3;
         }
 
-        .action-buttons {
-            display: flex;
-            margin-top: 10px;
-        }
-
         .action-buttons button {
             flex: 1;
             margin-left: 5px;
@@ -78,7 +73,7 @@
             margin-left: 0;
         }
     </style>
-    <link rel="stylesheet" href="/static/leaflet.css" />
+    <link rel="stylesheet" href="/static/leaflet.css"/>
     <script src="/static/leaflet.js"></script>
     <script src="/static/jquery-3.6.0.min.js"></script>
 </head>
@@ -104,10 +99,10 @@
     let currentMarker = null;
     let polyline = null;
 
-    $('#search-location').on('click', function() {
+    $('#search-location').on('click', function () {
         let searchValue = $('#location-search').val();
         if (searchValue) {
-            $.getJSON(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=KR&q=${searchValue}`, function(data) {
+            $.getJSON(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=KR&q=${searchValue}`, function (data) {
                 if (data.length > 0) {
                     let location = data[0];
                     let latlng = [location.lat, location.lon];
@@ -116,13 +111,13 @@
                     }
                     currentMarker = L.marker(latlng).addTo(map).bindPopup(location.display_name).openPopup();
                     map.setView(latlng, 13);
-                    $('#location-search').data('currentLocation', { name: location.display_name, latlng: latlng });
+                    $('#location-search').data('currentLocation', {name: location.display_name, latlng: latlng});
                 }
             });
         }
     });
 
-    $('#save-location').on('click', function() {
+    $('#save-location').on('click', function () {
         let currentLocation = $('#location-search').data('currentLocation');
         if (currentLocation) {
             locations.push(currentLocation);
@@ -137,7 +132,7 @@
         }
     });
 
-    $('#sort-locations').on('click', function() {
+    $('#sort-locations').on('click', function () {
         if (locations.length > 1) {
             let mapCenter = map.getCenter();
             locations.sort((a, b) => getDistance(mapCenter, a.latlng) - getDistance(mapCenter, b.latlng));
@@ -176,7 +171,7 @@
             map.removeLayer(polyline);
         }
         let latlngs = locations.map(loc => loc.latlng);
-        polyline = L.polyline(latlngs, { color: 'blue' }).addTo(map);
+        polyline = L.polyline(latlngs, {color: 'blue'}).addTo(map);
         map.fitBounds(polyline.getBounds());
     }
 </script>
